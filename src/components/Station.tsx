@@ -1,11 +1,21 @@
 "use client";
 
-import { Station } from "@/types/FuelPrices";
+import { LatLng, Station } from "@/types/FuelPrices";
 import { getAveragePrice } from "@/utils/prices";
-import PriceListView from "./Prices";
-import { stringify } from "querystring";
 import { useEffect, useState } from "react";
 import { ColumnHeader, TableCell } from "./Table";
+import { sortStationsByDistance } from "@/utils/geolocation";
+
+const sortStationsByBrandName = (stations: Station[]): Station[] =>
+  stations.sort((a, b) => {
+    if (a.brand < b.brand) {
+      return -1;
+    }
+    if (a.brand > b.brand) {
+      return 1;
+    }
+    return 0;
+  });
 
 const sortByAveragePrice = (stations: Station[]): Station[] => {
   return stations.sort(({ prices: pricesA }, { prices: pricesB }) => {
@@ -30,44 +40,77 @@ export const sortByFuelPrice = (
   });
 };
 
-export const StationItem = ({ site_id, address, brand, prices }: Station) => {
+export const StationItem = ({
+  site_id,
+  address,
+  brand,
+  prices,
+  distanceMetres,
+  sortKey,
+}: Station & { sortKey?: SortKey }) => {
   return (
     <tr key={site_id + address} className="my-2 p-2 container mx-auto">
-      <TableCell>{brand}</TableCell>
-      <TableCell>{address}</TableCell>
+      <TableCell active={sortKey === "brand"}>{brand}</TableCell>
+      <TableCell active={sortKey === "address"}>{address}</TableCell>
+      <TableCell active={sortKey === "distance"}>
+        {distanceMetres.toFixed(2)}
+      </TableCell>
 
-      <TableCell>{prices["E5"]?.toFixed(2)}</TableCell>
-      <TableCell>{prices["E10"]?.toFixed(2)}</TableCell>
-      <TableCell>{prices["B7"]?.toFixed(2)}</TableCell>
-      <TableCell>{prices["SDV"]?.toFixed(2)}</TableCell>
+      <TableCell active={sortKey === "E5"}>
+        {prices["E5"]?.toFixed(2)}
+      </TableCell>
+      <TableCell active={sortKey === "E10"}>
+        {prices["E10"]?.toFixed(2)}
+      </TableCell>
+      <TableCell active={sortKey === "B7"}>
+        {prices["B7"]?.toFixed(2)}
+      </TableCell>
+      <TableCell active={sortKey === "SDV"}>
+        {prices["SDV"]?.toFixed(2)}
+      </TableCell>
     </tr>
   );
 };
 
-export const StationList = ({ stations }: { stations: Station[] }) => {
+type FuelTypes = "E5" | "E10" | "B7" | "SDV";
+
+type SortKey = FuelTypes | "distance" | "brand" | "address";
+
+export const StationList = ({
+  stations,
+  coordinates,
+}: {
+  stations: Station[];
+  coordinates: LatLng;
+}) => {
   const [sorted, setSorted] = useState<Station[]>(stations);
-  const [sortParam, setSortParam] = useState<string | null>();
+  const [sortParam, setSortParam] = useState<SortKey>();
 
   useEffect(() => {
     if (sortParam !== null) {
       switch (sortParam) {
         case "E5":
         case "E10":
-        case "B5":
+        case "B7":
         case "SDV":
           const filtered = stations.filter(({ prices }) => sortParam in prices);
           const priceSorted = sortByFuelPrice(filtered, sortParam);
           setSorted([...priceSorted]);
           break;
+        case "distance":
+          setSorted(sortStationsByDistance(coordinates, stations));
+          break;
         case "brand":
+          setSorted(sortStationsByBrandName(stations));
+          break;
         case "address":
         default:
           setSorted([...sortByAveragePrice(stations)]);
       }
     }
-  }, [sortParam, setSorted, stations]);
+  }, [sortParam, setSorted, stations, coordinates]);
 
-  const handleSortClick = (sortKey: string) => {
+  const handleSortClick = (sortKey: SortKey) => {
     if (sortParam === sortKey) {
       setSorted([...sorted.reverse()]);
     } else {
@@ -78,24 +121,57 @@ export const StationList = ({ stations }: { stations: Station[] }) => {
     <table width={"100%"}>
       <thead>
         <tr>
-          <ColumnHeader key="brand">Brand</ColumnHeader>
+          <ColumnHeader
+            key="brand"
+            onClick={() => handleSortClick("brand")}
+            active={sortParam === "brand"}
+          >
+            Brand
+          </ColumnHeader>
           <ColumnHeader key="address">Address</ColumnHeader>
 
-          <ColumnHeader key="E5" onClick={() => handleSortClick("E5")}>
+          <ColumnHeader
+            key="distance"
+            onClick={() => handleSortClick("distance")}
+            active={sortParam === "distance"}
+          >
+            Distance (km)
+          </ColumnHeader>
+          <ColumnHeader
+            key="E5"
+            onClick={() => handleSortClick("E5")}
+            active={sortParam === "E5"}
+          >
             E5
           </ColumnHeader>
-          <ColumnHeader key="E10" onClick={() => handleSortClick("E10")}>
+          <ColumnHeader
+            key="E10"
+            onClick={() => handleSortClick("E10")}
+            active={sortParam === "E10"}
+          >
             E10
           </ColumnHeader>
-          <ColumnHeader key="B7" onClick={() => handleSortClick("B7")}>
+          <ColumnHeader
+            key="B7"
+            onClick={() => handleSortClick("B7")}
+            active={sortParam === "B7"}
+          >
             B7
           </ColumnHeader>
-          <ColumnHeader key="SDV" onClick={() => handleSortClick("SDV")}>
+          <ColumnHeader
+            key="SDV"
+            onClick={() => handleSortClick("SDV")}
+            active={sortParam === "SDV"}
+          >
             SDV
           </ColumnHeader>
         </tr>
       </thead>
-      <tbody>{sorted.map(StationItem)}</tbody>
+      <tbody>
+        {sorted.map((station) => (
+          <StationItem {...station} sortKey={sortParam} key={station.address} />
+        ))}
+      </tbody>
     </table>
   );
 };

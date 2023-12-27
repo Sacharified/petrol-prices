@@ -12,6 +12,7 @@ export type Station = {
   postcode: string;
   location: LatLng;
   prices: PriceList;
+  distanceMetres: number;
 };
 
 export type JSONData = {
