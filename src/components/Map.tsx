@@ -67,7 +67,11 @@ export default function Map({ center, stations = [] }: TMap) {
       >
         {markers.length > 0 &&
           markers.map((props) => (
-            <CustomMarker key={JSON.stringify(props.position)} {...props} />
+            <Marker
+              key={props.position.lat}
+              position={props.position}
+              // label={props.label}
+            />
           ))}
       </GoogleMap>
     </div>
