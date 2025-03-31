@@ -5,19 +5,33 @@ export type LatLng = {
 
 export type PriceList = Record<string, number>;
 
-export type Station = {
+export type LatitudeLongitude = {
+  latitude: string;
+  longitude: string;
+};
+
+export type ProviderStation = {
+  location: LatitudeLongitude;
+  prices: PriceList;
   site_id: string;
   brand: string;
   address: string;
   postcode: string;
-  location: LatLng;
+};
+
+export type Station = {
+  site_id: ProviderStation["site_id"];
+  brand: ProviderStation["brand"];
+  address: ProviderStation["address"];
+  postcode: ProviderStation["postcode"];
   prices: PriceList;
-  distanceMetres: number;
+  location: LatLng;
+  distanceMetres?: number;
 };
 
 export type JSONData = {
   last_updated: string;
-  stations: Station[];
+  stations: ProviderStation[];
 };
 
 export type ProvidersList = Record<string, string>;

@@ -21,12 +21,13 @@ const Locator = ({ stations }: { stations: Station[] }) => {
   }, [coordinates, stations, setSortedStations]);
   return (
     <>
-      <APIProvider apiKey={"AIzaSyCGeKMepz9n_KRbySuruogvLhrx78L9T38"}>
+      <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
         <Map center={coordinates} stations={sortedStations} />
       </APIProvider>
-      <h3>lat: {coordinates.lat}</h3>
-      <h3>long: {coordinates.lng}</h3>
-      <h2 className="text-4xl">Stations:</h2>
+      <h3>
+        lat: {coordinates.lat} long: {coordinates.lng}
+      </h3>
+      <h2 className="text-4xl">Stations nearby:</h2>
       <StationList
         stations={sortedStations.slice(0, 20)}
         coordinates={coordinates}

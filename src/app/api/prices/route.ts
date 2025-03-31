@@ -3,9 +3,12 @@ import type {
   PriceList,
   ProvidersJSON,
   ProvidersList,
+  ProviderStation,
   Station,
-} from "../../../types/FuelPrices";
-import ProviderData from "../../../providers.json";
+} from "@/types/FuelPrices";
+import ProviderDataJSON from "@/data/providers.json";
+
+const ProviderData = ProviderDataJSON as ProvidersJSON;
 
 const normalisePrices = (prices: PriceList): PriceList => {
   return Object.keys(prices).reduce((memo, key) => {
@@ -25,27 +28,23 @@ const getPriceData = async (providers: ProvidersList) => {
   const reqs = [];
   for (const key in providers) {
     const providerUrl = providers[key];
-    reqs.push(fetch(providerUrl).then((res) => res.json()));
+    reqs.push(fetch(providerUrl).then<JSONData>((res) => res.json()));
   }
 
   const data = await Promise.all(reqs);
 
-  return data.flatMap((item) => {
-    return item.stations.map(
-      (station: {
-        location: { latitude: string; longitude: string };
-        prices: PriceList;
-      }) => {
-        return {
-          ...station,
-          location: {
-            lat: parseFloat(station.location.latitude),
-            lng: parseFloat(station.location.longitude),
-          },
-          prices: normalisePrices(station.prices),
-        };
-      }
-    );
+  return data.flatMap<Station>((item) => {
+    return item.stations.map((station) => {
+      const partialStation = {
+        ...station,
+        location: {
+          lat: parseFloat(station.location.latitude),
+          lng: parseFloat(station.location.longitude),
+        },
+        prices: normalisePrices(station.prices),
+      };
+      return partialStation;
+    });
   });
 };
 

@@ -53,7 +53,7 @@ export const StationItem = ({
       <TableCell active={sortKey === "brand"}>{brand}</TableCell>
       <TableCell active={sortKey === "address"}>{address}</TableCell>
       <TableCell active={sortKey === "distance"}>
-        {distanceMetres.toFixed(2)}
+        {distanceMetres?.toFixed(2) ?? 0}km
       </TableCell>
 
       <TableCell active={sortKey === "E5"}>
