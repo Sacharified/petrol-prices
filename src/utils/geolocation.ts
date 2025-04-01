@@ -29,5 +29,6 @@ export const sortStationsByDistance = (
     }))
     .sort(({ distanceMetres: dA }, { distanceMetres: dB }) => {
       return dA - dB;
-    });
+    })
+    .filter(({ brand }) => !!brand);
 };

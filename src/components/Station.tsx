@@ -6,6 +6,45 @@ import { useEffect, useState } from "react";
 import { ColumnHeader, TableCell } from "./Table";
 import { sortStationsByDistance } from "@/utils/geolocation";
 
+const sortStationsByOptimalPriceAndDistance = (
+  coordinates: LatLng,
+  stations: Station[]
+): Station[] => {
+  const priceSorted = sortByAveragePrice(stations);
+  const distanceSorted = sortStationsByDistance(coordinates, stations);
+  return stations.sort(
+    (
+      { distanceMetres: distanceMetresA, prices: pricesA, site_id: siteIdA },
+      { distanceMetres: distanceMetresB, prices: pricesB, site_id: siteIdB }
+    ) => {
+      const fuels = Object.keys(pricesA).filter((price) => price in pricesB);
+
+      const avgPriceA = getAveragePrice(pricesA, fuels);
+      const avgPriceB = getAveragePrice(pricesB, fuels);
+      const distanceA = distanceMetresA ?? 0;
+      const distanceB = distanceMetresB ?? 0;
+      // heuristic to sort by distance and price
+      const heuristicA =
+        priceSorted.findIndex(({ site_id }) => site_id === siteIdA) / 0.8 -
+        distanceSorted.findIndex(({ site_id }) => site_id === siteIdA) * 1.2;
+      const heuristicB =
+        priceSorted.findIndex(({ site_id }) => site_id === siteIdB) / 0.8 -
+        distanceSorted.findIndex(({ site_id }) => site_id === siteIdB) * 1.2;
+      console.table([
+        { avgPrice: avgPriceA, distance: distanceA, heuristic: heuristicA },
+        { avgPrice: avgPriceB, distance: distanceB, heuristic: heuristicB },
+      ]);
+      if (heuristicA < heuristicB) {
+        return -1;
+      }
+      if (heuristicA > heuristicB) {
+        return 1;
+      }
+      return avgPriceA - avgPriceB;
+    }
+  );
+};
+
 const sortStationsByBrandName = (stations: Station[]): Station[] =>
   stations.sort((a, b) => {
     if (a.brand < b.brand) {
@@ -85,7 +124,7 @@ export const StationList = ({
 }) => {
   const [sorted, setSorted] = useState<Station[]>(stations);
   const [sortParam, setSortParam] = useState<SortKey>();
-
+  console.log(coordinates);
   useEffect(() => {
     if (sortParam !== null) {
       switch (sortParam) {
@@ -105,7 +144,10 @@ export const StationList = ({
           break;
         case "address":
         default:
-          setSorted([...sortByAveragePrice(stations)]);
+          // setSorted([...sortByAveragePrice(stations)]);
+          setSorted([
+            ...sortStationsByOptimalPriceAndDistance(coordinates, stations),
+          ]);
       }
     }
   }, [sortParam, setSorted, stations, coordinates]);

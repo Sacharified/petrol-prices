@@ -14,6 +14,7 @@ const Locator = ({ stations }: { stations: Station[] }) => {
 
   useEffect(() => {
     if (coordinates) {
+      console.log("Coordinates:", coordinates);
       const sorted = sortStationsByDistance(coordinates, stations);
 
       setSortedStations([...sorted]);
@@ -29,7 +30,7 @@ const Locator = ({ stations }: { stations: Station[] }) => {
       </h3>
       <h2 className="text-4xl">Stations nearby:</h2>
       <StationList
-        stations={sortedStations.slice(0, 20)}
+        stations={sortedStations.slice(0, 5)}
         coordinates={coordinates}
       />
     </>
